@@ -1,0 +1,69 @@
+---
+title: "Homework 2 exploration"
+author: "Hope Hahn"
+date: 2-3-2024
+format: html
+---
+
+## Part 2a
+
+***Setup and Data Wrangling***
+```{r setup}
+# load libraries ----
+library(tidyverse)
+
+# import data ----
+benthic_data <- read_csv(here::here("data", "MCR_LTER_Annual_Survey_Benthic_Cover_20231211.csv"))
+
+# clean data ----
+benthic_data_clean <- benthic_data %>% 
+  janitor::clean_names() %>% # clean to lower snake case
+  select(year, site, taxonomy_substrate_functional_group, percent_cover) %>% # select only relevant columns
+  rename(substrate_group = taxonomy_substrate_functional_group) %>% # rename column for future ease of use
+  filter(year %in% c(2005, 2023)) %>% # select earliest and latest year
+  filter(percent_cover != 0) %>% # remove values of 0
+  mutate(year = as.character(year)) %>% # use year as character bc only using two years
+  filter(substrate_group %in% c("Algal Turf", "Coral", "Crustose Corallines", "Sand", "Soft Coral")) # only select the obvious substrate groups
+```
+
+***Exploratory Data Visualizations***
+```{r}
+# ridgeline plots ----
+# faceted by site
+ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
+  ggridges::geom_density_ridges_gradient(scale = 1) +
+  facet_wrap(~site)
+
+# not faceted
+ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
+  ggridges::geom_density_ridges_gradient(scale = 1) 
+
+# boxplot ----
+# faceted by site
+ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
+  geom_boxplot() +
+  facet_wrap(~site)
+
+# not faceted
+ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
+  geom_boxplot() 
+
+# density ----
+ggplot(benthic_data_clean) +
+  geom_density(aes(x = percent_cover, fill = year)) +
+  facet_wrap(~substrate_group)
+```
+
+## Part 2b
+
+**1. What have you learned about your data? Have any potentially interesting patterns emerged? (5-8 sentences)**
+
+- From the exploratory data visualizations, I have learned that the substrate Taxonomy_Substrate_Functional_Group variable is a little bit more complicated than I thought. To make it simpler for the preliminary visualizations, I selected the simplest, obvious functional groups. Additionally, I still need to figure out how to use the Percent_Cover variable in the best way. I think it might be best to keep it as is, but I am not sure if I should do any transformations since the percent cover is based off of specific quadrats/transects and not site as a whole, and I am visualizing on larger scales than the transects. The percents per site do not add up to 100% because each percent cover is the percentage of a quadrat or transect within a site (for example, 44% does not mean 44% of the site, it is 44% of PART of the site). I am not sure how I would go about this yet, but I will be brainstorming. From the visualizations I created, the most interesting trend is that it appears that percent cover of coral has typically decreased among sites, while percent of algal turf cover has increased from 2005 to 2023. Soft Coral has increased, but I am not sure what the implications of that are.
+
+**2. In HW #1, you outlined some questions that you wanted to answer using these data. Have you made any strides towards answering those questions? If yes, how so? If no, what next steps do you need to take (e.g. I need to create X plot type, I still need to track down Y data, I need to restructure existing data so that you can visualize it in Z ways, etc.)? (8-12 sentences)**
+
+- The biggest question I had for this data is whether there is a clear change in substrate cover in terms of algae and coral cover since coral-to-algae phase shifts are significant on coral reefs. These visualizations show that there does appear to be an increase in algal turf cover along with a decrease in (what I am assuming is hard) coral cover from the beginning of these surveys in 2006 to the end in 2023. I think these are important results for my project. However, there are so many different substrate groups in the Taxonomy_Substrate_Functional_Group variable that I could not figure out what to do with them. They were taxonomic groups, and I was confused why they were not classified into the more generic groups such as coral, algae, etc. I think the next steps would be to classify the rest of the observations that I filtered out into a more generic observation. I believe that these observations may mostly be macroalgae groups, so I may be able to classify all of them into a separate macroalgae observation. I had to filter them out for these visualizations because they made the graphs very unclear, but I still think they will be important to the analysis. Additionally, I would like to figure out if I should have larger scale trends across all sites, or just look at site specific levels. I don't think that looking at any smaller scales than site would be helpful and might clutter the visualizations. I will also fiddle with the Percent_Cover variable to see if there is a way to display that information in a more intuitive way. Overall, I am happy with the data, and will see what I can do to portray the information in a clearer way. 
+
+**3. What challenges do you foresee encountering with your data? These can be data wrangling and / or visualization challenges. (4-6 sentences)**
+
+- As I mentioned in the previous question, I will be looking at better ways to portray the Percent_Cover variable, and I can see this causing issues. I am already not sure where to begin with this, and I am not sure how to consolidate the observations within a site to portray the percentage on a site scale vs transect/quadrat scale. Additionally, I foresee having issues with reclassifying the Taxonomy_Substrate_Functional_Group variable. I will have to do some external research outside of the metadata to do this. 
