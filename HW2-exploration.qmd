@@ -15,7 +15,7 @@ execute:
 library(tidyverse)
 
 # import data ----
-benthic_data <- read_csv(here::here("data", "MCR_LTER_Annual_Survey_Benthic_Cover_20231211.csv"))
+benthic_data <- read_csv("https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fknb-lter-mcr%2F8%2F36%2F54d54c25616a48b9ec684118df9d6fca")
 
 # clean data ----
 benthic_data_clean <- benthic_data %>% 
