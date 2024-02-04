@@ -3,12 +3,14 @@ title: "Homework 2 exploration"
 author: "Hope Hahn"
 date: 2-3-2024
 format: html
+execute: 
+  warning: false
 ---
 
 ## Part 2a
 
 ***Setup and Data Wrangling***
-```{r setup}
+```{r}
 # load libraries ----
 library(tidyverse)
 
@@ -27,6 +29,8 @@ benthic_data_clean <- benthic_data %>%
 ```
 
 ***Exploratory Data Visualizations***
+
+Ridgeline Plots:
 ```{r}
 # ridgeline plots ----
 # faceted by site
@@ -38,6 +42,10 @@ ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = ye
 ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
   ggridges::geom_density_ridges_gradient(scale = 1) 
 
+```
+
+Boxplots:
+```{r}
 # boxplot ----
 # faceted by site
 ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
@@ -47,7 +55,10 @@ ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = ye
 # not faceted
 ggplot(benthic_data_clean, aes(x = percent_cover, y = substrate_group, fill = year)) +
   geom_boxplot() 
+```
 
+Density Plot
+```{r}
 # density ----
 ggplot(benthic_data_clean) +
   geom_density(aes(x = percent_cover, fill = year)) +
