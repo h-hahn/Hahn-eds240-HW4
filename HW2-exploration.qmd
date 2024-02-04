@@ -1,5 +1,5 @@
 ---
-title: "Homework 2 exploration"
+title: "Homework 2: Data Exploration"
 author: "Hope Hahn"
 date: 2-3-2024
 format: html
