@@ -1,0 +1,379 @@
+---
+title: "EDS 240 HW3"
+author: "Hope Hahn"
+date: 2-17-2024
+format:
+  html:
+    embed-resources: true
+---
+
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Overview
+
+#### Questions
+
+**Which option do you plan to pursue?**
+
+* I plan to pursue option 1.
+
+**Restate your question(s). Has this changed at all since HW #1? If yes, how so?**
+
+* My questions has stayed the same since HW #1, and it is: Has the substrate/benthic cover of coral reefs in Moorea changed over time, especially coral and algae cover?
+
+**Explain which variables from your data set(s) you will use to answer your question(s).**
+
+* My data contains the variables year, date, location, site, habitat, transect, quadrat, taxonomy_substrate_functional_group, and percent cover. As of now, I plan on using year, site, substrate group, and percent cover for my visualizations. I am still figuring out how to alter the substrate column to include the individual species that are included in it, as well as the percent cover variable to make the percents more intuitive. For now I will keep them as is and the code for the graphs should still make sense with the new data.
+
+**Find at least two data visualizations that you could (potentially) borrow / adapt pieces from.**
+
+![](2020-18_trails.png){fig-alt="Visualization by Ijeamaka Anyene"}
+
+* Although this first visualization does not show radar charts, I like how it is laid out, and I think this layout would be effective for radar plots as well.
+
+![](eggs.png){fig-alt=""}
+
+* I think time series with annotations and general trend lines are effective. I think if I pursue a time series, I would not use a trend line because there would be multiple lines, and it might make it a bit chaotic. I like the annotations at different time periods though. I think if I pursue a time series, it might be effective to add notes such as coral bleaching events, etc.
+
+**Hand drawn visualizations:**
+
+![](Screenshot3.png){fig-alt="hand drawn images"}
+
+## Plots
+
+#### Visualization for General Audience
+
+***Load and Prep Data***
+
+```{r}
+# load libraries
+library(tidyverse)
+library(ggradar)
+library(patchwork)
+library(fmsb)
+
+## Data preparation -----------------------------
+# load in data
+benthic_data <- read_csv("https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fknb-lter-mcr%2F8%2F36%2F54d54c25616a48b9ec684118df9d6fca")
+
+# clean up data 
+benthic_data_clean <- benthic_data %>% 
+  janitor::clean_names() %>% # clean names to lower snake case
+  select(year, site, taxonomy_substrate_functional_group, percent_cover) %>% # select only relevant columns
+  rename(substrate_group = taxonomy_substrate_functional_group) %>% # rename to shorter name for ease of use
+  filter(percent_cover != 0) %>% # remove all 0 values from percent cover
+  #mutate(year = as.character(year)) %>% # I am using all years now so removing this
+  filter(substrate_group %in% c("Algal Turf", "Coral", "Crustose Corallines", "Sand", "Soft Coral")) # only select the obvious substrate groups
+```
+
+***LTER1 Plots***
+
+```{r}
+# LTER1 ----------------
+# clean data for radar plot 
+LTER1_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 1",
+         year %in% c(2005, 2023)) %>% # select only LTER 1 for two years
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # averages!
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each substrate group its own column
+  mutate(soft_coral = 0) %>% # it took soft coral out so add it back
+  rename("Soft Coral" = soft_coral) # rename for consitency
+
+# LTER1 PLOT
+LTER1_plot <- ggradar(LTER1_radar) +
+  theme_void() +
+  labs(title = "LTER1") + # rename title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+        legend.position = "none")  # adjust title text
+
+# show plot
+LTER1_plot
+```
+
+***LTER2 Plot***
+
+```{r}
+# LTER2 --------------------
+# clean data for radar plot 
+LTER2_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 2",
+         year %in% c(2005, 2023)) %>% # select LTER 2
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # average percent cover values
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make substrate group own columns
+  mutate(soft_coral = 0) %>% # add soft coral since it was taken out
+  rename("Soft Coral" = soft_coral) # rename for consistency
+
+# plot 
+LTER2_plot <- ggradar(LTER2_radar) +
+  theme_void() +
+  labs(title = "LTER1") + # add title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 15),
+        legend.position = "none") # adjust title
+
+# show plot
+LTER2_plot
+```
+
+***LTER3 Plot***
+
+```{r}
+# LTER3 --------------------
+# clean data for radar plot 
+LTER3_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 3",
+         year %in% c(2005, 2023)) %>%  # select only LTER 3 data
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # average percent cover values
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each substrate group it's own column
+  mutate(soft_coral = 0) %>% # add soft coral since it took it out
+  rename("Soft Coral" = soft_coral) # rename for consistency
+
+# LTER3 plot
+LTER3_plot <- ggradar(LTER3_radar) +
+  theme_void() +
+  labs(title = "LTER3") + # add title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 20),
+        legend.position = "none") # adjust title text
+
+# show plot
+LTER3_plot
+```
+
+***LTER4 Plot***
+
+```{r}
+# LTER4 --------------------
+# clean data for radar plot 
+LTER4_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 4",
+         year %in% c(2005, 2023)) %>% # select onyl LTER 4 data in 2 years
+  group_by(substrate_group, year) %>% # average percent cover values
+  summarise(avg_cover = mean(percent_cover)) %>% 
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) # make substrate group own columns
+
+# LTER 4 plot
+LTER4_plot <- ggradar(LTER4_radar) +
+  theme_void() +
+  labs(title = "LTER4") + # add title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 20),
+        legend.position = "none") # adjust title
+
+# show plot
+LTER4_plot
+```
+
+***LTER5 Plot***
+
+```{r}
+# LTER5 --------------------
+# clean data for radar plot 
+LTER5_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 5",
+         year %in% c(2005, 2023)) %>% # select only LTER5 for 2 years
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # average percent cover values
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) # make each group its own column
+
+# make LTER 5 plot 
+LTER5_plot <- ggradar(LTER5_radar) +
+  theme_void() +
+  labs(title = "LTER5") + # add title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 20), 
+        legend.position = "none") # adjust title
+
+# show plot
+LTER5_plot
+```
+
+***LTER6 Plot***
+
+```{r}
+# LTER6 --------------------
+# clean data for radar plot 
+LTER6_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 6",
+         year %in% c(2005, 2023)) %>% # select only LTER6 in two years
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # average percent cover values
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each group own column
+  mutate(soft_coral = 0) %>% # add soft coral bc it was taken out
+  rename("Soft Coral" = soft_coral) # rename for consistency
+
+LTER6_radar[is.na(LTER6_radar)] <- 0 # one value will not plot bc it is NA, change to 0
+
+# LTER6 PLot
+LTER6_plot <- ggradar(LTER6_radar) +
+  theme_void() +
+  labs(title = "LTER6") + # add title
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 20),
+        legend.position = "none") # adjust title
+
+# show plot
+LTER6_plot
+```
+
+***Put together patchwork plot***
+
+Note: the patchwork plot is not working anymore.
+
+```{r}
+# make df to make pie chart legend thing
+legend_df <- data.frame(x = c(1,1),
+                     y = c(2005, 2023))
+
+# make round circles for legend 
+legend <- ggplot(legend_df) +
+  geom_bar(aes(x = x), fill = c("red3", "cornflowerblue")) + # change colors
+  facet_wrap(~y) + # wrap so there are 2
+  coord_polar() + # make it a circle
+  theme_void() + 
+  theme(strip.text = element_text(
+        size = 12, face = "bold")) # change text
+
+# combine plots (3 on top 3 on bottom)
+LTERS <- (LTER1_plot + LTER2_plot + LTER3_plot) / (LTER4_plot + LTER5_plot + LTER6_plot)
+
+# add legend below
+LTERS_plot <- LTERS/legend 
+
+# show final plot
+LTERS_plot # have to comment this out because it is inhibiting rendering :(
+```
+
+***Display Plot***
+
+I promise this was working before, but for some reason my plot decided not to save properly all of a sudden, and I did not save a previous version of my plots. I keep getting an error when I try to add my plots together with patchwork, and it says "Error in Ops.data.frame(guide_loc, panel_loc) : 
+  ‘==’ only defined for equally-sized data frames". I am not sure why it is not working now, but basically, I had a plot of LTER 1, 2, 3 over LTER 4, 5, 6, with a preliminary legend underneath. If you have any insight into why this is happening all of a sudden I would appreciate help. I even restarted my session and my computer, but to no avail.
+  
+I printed all of the individual radar plots (above) since I can't get them to fit all together. I will have to look more into this error, but for now I could not find any helpful information to fix my problem. I did not change anything, so I am not sure why it is not working now :'). I totally understand if this gives me a not yet grade, but I really cannot figure it out, please help!
+
+![](Screenshot2.png){fig-alt="Error from Patchwork"}
+
+![](radars.png){fig-alt="Radar charts of benthic cover on Moorea LTER sites in 2005 and 2023."}
+
+#### Backup Visualization for General Audience
+
+Here is an average over all sites, since patchwork was not working:
+
+```{r}
+# Average radar plot over all sites
+# make appropriately formatted dataframe ----------------------
+# specify minimum and maximum values
+MIN_MAX <- data.frame(substrate = c("Algal Turf", "Coral", "Crustose Corallines", "Sand", "Soft Coral"), max = c(100,100,100,100,100)) %>% 
+  pivot_wider(names_from = substrate, 
+              values_from = max) %>% 
+  rbind(0)
+
+# average over all sites for 2005
+LTER_2005 <- benthic_data_clean %>% 
+  filter(year == 2005) %>% 
+  group_by(substrate_group) %>% 
+  summarise(percent_cover_mean = mean(percent_cover)) %>% 
+  pivot_wider(names_from = substrate_group,
+              values_from = percent_cover_mean)
+
+# average over all sites for 2023
+LTER_2023 <- benthic_data_clean %>% 
+  filter(year == 2023) %>% 
+  group_by(substrate_group) %>% 
+  summarise(percent_cover_mean = mean(percent_cover)) %>% 
+  pivot_wider(names_from = substrate_group,
+              values_from = percent_cover_mean)
+
+# add all together for proper fmsb radar chart format
+LTER <- bind_rows(MIN_MAX, LTER_2005, LTER_2023) %>% 
+  gtools::na.replace(0)
+
+# make plot --------------------------------------
+radarchart(LTER, 
+           axistype = 1,
+           title = "Average % Substrate Cover (Moorea) from 2005 and 2023",
+           pcol = c("blue", "red"),
+           cglcol = "darkgrey",
+           vlcex = 0.8,
+           axislabcol = "grey",
+           calcex = 0.7)
+
+# add legend
+legend(1.3, 0.00001,
+       legend = c("2005", "2023"),
+       col = c("blue", "red"),
+       lty = c(1, 2),
+       title = "Year",
+       ncol = 1,
+       bty = "n",
+       cex = 0.8)
+```
+
+* This plot shows just the change between 2005 and 2023 benthic cover on Moorea coral reefs over all LTER sites. Ideally, I would have liked all 6 sites separately, but I will have to continue to work on that. If I have to stick with just this one, what other information should I add? Would descriptions of vocabulary and significance be overkill?
+
+#### Visualization for publication
+
+```{r}
+# summarise cover data by substrate group and year
+benthic_data_time <- benthic_data_clean %>% 
+  group_by(year, substrate_group) %>%
+  summarise(avg_cover = mean(percent_cover))
+
+# plot all substrate groups over time
+ggplot(benthic_data_time) +
+  geom_line(aes(x = year, y = avg_cover, color = substrate_group,  group = substrate_group)) +
+  theme_minimal() +
+  labs(title = "Benthic cover over time on Moorea coral reefs",
+       color = "Substrate Group",
+       y = "Average Percent Cover",
+       x = "Year")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # adjust x axis titles
+```
+
+* This plot shows trends over time for benthic cover on Moorea coral reefs as an average over all LTER sites included in the dataset. Because this would be in a publication, the figure description and paper would include background information as well discussing these general trends and their significance (am I supposed to still add this to the graph here?). The paper would also discuss the variables which the reader could reference. 
+
+## Visualization for presentation
+
+```{r}
+# summarise cover data by substrate group and year
+benthic_data_presentation <- benthic_data_clean %>% 
+  group_by(year, substrate_group) %>%
+  summarise(avg_cover = mean(percent_cover)) %>% 
+  filter(substrate_group %in% c("Algal Turf", "Coral")) # select only these substrate groups
+
+# plot time series of substrate cover
+ggplot(benthic_data_presentation) +
+  geom_line(aes(x = year, y = avg_cover, color = substrate_group,  group = substrate_group)) +
+  theme_minimal() +
+  labs(title = "Benthic cover over time on Moorea coral reefs", # edit titles
+       subtitle = "Coral and algae cover averaged over 6 LTER sites",
+       color = "Substrate Group",
+       y = "Average Percent Cover",
+       x = "Year")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) # adjust x-axis labels
+```
+
+* Because Coral and Algae is most significant to look at in terms of coral-to-algae phase shifts on coral reefs, in a presentation, it may be more beneficial to just look at these two groups rather than all of them. Looking at only these two groups makes it easier to look at, and the audience does not need to take too long to parse out what each line means; they will easily be able to look at general trends while the presenter explains what is happening.
+
+## Additional Questions
+
+**What challenges did you encounter or anticipate encountering as you continue to build / iterate on your visualizations in R?**
+
+* The main challenge I faced was using patchwork. Initially, I used the fmsb package to create radar plots, however, there was no easy way to combine all of the plots, so I tried to use ggradar instead. I do not like the plots I created with ggradar as much as the ones I created with the fmsb package, but using ggradar allowed me to use patchwork to easily customize the plots. I saved the plot, and it worked well, but after leaving the computer for a little and returning, it decided to not save properly anymore :(. I had not changed anything, so I have no idea what the issue may be, and I need to look into this issue further. If I cannot figure out what the problem is, I may go back to using fmsb plots and combine them using a different method.
+
+* Another challenge was figuring out how to portray information for the general public. I think I may have been planning on using too much jargon (ex: benthic cover), but I am not sure what this should look like. Additionally, does the general public understand radar plots? Should I choose a different type of plot?
+
+**What ggplot extension tools / packages do you need to use to build your visualizations? Are there any that we haven’t covered in class that you’ll be learning how to use for your visualizations?**
+
+* I experimented with the fmsb and ggradar packages to create the radar plots. I liked the plots that I created with fmsb better than ggradar, but I think customization will be easier with ggradar, since I will be able to ggplot controls. fmsb radar charts will be more difficult to customize, but I may look into it more to see if it is possible. Even though I am more familiar with ggplot customizations, ggradar is slightly different than those I am familiar with, so I will still have to learn more about customizations for these charts. I believe both of these were not covered in class, so I have been conducting individual research on these packages.
+
+**What feedback do you need from the instructional team and / or your peers to ensure that your intended message is clear?**
+
+* I think I will need a lot of feedback about the vocabulary I use and if the plots are aesthetically intuitive. When I start making graphs, I think they start making more sense to me because I created them, but they may not necessarily make the most sense. Additionally, I am not the best with adding annotations or labeling, so I think it would be nice to get some pointers about where I should be adding more/less information to my graphs, and where the best places to add these are. I am also bad at placing legends, so feedback on that would be nice as well. 
+
+## Additional comments from me:
+
+* I was wondering what other information I should be adding to these plots. Is it appropriate to add annotations inside of a plot for a publication, or are these expected to be more plain/professional.
+* Is there a way to put fmsb plots together like patchwork? I liked those plots much better, but could not find an easy way to combine them (but considering my ggradars decided to be weird, maybe this is worth looking into?)
+* Are radar charts appropriate for a general/non-scientific audience? Should I switch my time series with the radar plots? I was not sure if radar plots are very nice in publications either. 
+* Should I have done the same type of plot for all three audiences? (rather than doing two types such as radar and line graph)
