@@ -1,0 +1,415 @@
+---
+title: "hw4"
+format: html
+---
+
+## Load in data
+
+```{r}
+# load libraries
+library(tidyverse)
+library(ggradar)
+library(patchwork)
+library(fmsb)
+library(showtext)
+
+# read in the data ----
+benthic_data <- read_csv("https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fknb-lter-mcr%2F8%2F36%2F54d54c25616a48b9ec684118df9d6fca")
+
+# rename all the algae species to just algae
+benthic_data$Taxonomy_Substrate_Functional_Group <- case_when(
+  benthic_data$Taxonomy_Substrate_Functional_Group %in% c("Amansia rhodantha", "Turbinaria ornata", "Dictyota sp.", "Halimeda sp.",  "Asparagopsis taxiformis", "Lobophora variegata", "Damselfish Turf", "Peyssonnelia inamoena",  "Valonia aegagropila", "Dichotomaria marginata", "Dichotomaria obtusata", "Ralfsia sp.", "Amphiroa fragilissima", "Dictyota friabilis", "Galaxaura sp.", "Caulerpa serrulata",  "Liagora ceranoides", "Halimeda minima", "Dictyota bartayresiana", "Galaxaura rugosa", "Halimeda opuntia", "Halimeda discoidea","Caulerpa racemosa", "Galaxaura filamentosa", "Valonia ventricosa", "Cladophoropsis membranacea", "Martensia elegans", "Halimeda distorta", "Dictyosphaeria versluysii", "Actinotrichia fragilis", "Microdictyon umbilicatum", "Halimeda incrassata", "Jania sp.", "Dictyosphaeria cavernosa", "Halimeda macroloba", "Dictyota hamifera", "Gelidiella acerosa", "Caulerpa peltata", "Dictyota implexa", "Peyssonnelia bornetii", "Microdictyon okamurae", "Halimeda taenicola", "Chlorodesmis fastigiata", "Phyllodictyon anastomosans", "Chnoospora implexa", "Codium geppiorum", "Gibsmithia hawaiiensis", "Peyssonnelia sp.", "Cladophoropsis luxurians", "Neomeris vanbosseae", "Caulerpa pickeringii", "Rhipidosiphon javensis", "Sargassum pacificum", "Padina boryana", "Hypnea spinella", "Chaetomorpha antennina", "Boodlea kaeneana", "Acanthophora spicifera", "Coelothrix irregularis", "Gelidiella sp.", "Hydroclathrus clathratus", "Dictyota divaricata", "Colpomenia sinuosa") ~ "Algae",
+  TRUE ~ benthic_data$Taxonomy_Substrate_Functional_Group
+)
+
+# change algal turf to algae
+benthic_data$Taxonomy_Substrate_Functional_Group <- case_when(
+  benthic_data$Taxonomy_Substrate_Functional_Group %in% c("Algal Turf") ~ "Algae",
+  TRUE ~ benthic_data$Taxonomy_Substrate_Functional_Group
+)
+
+# clean up data ----
+benthic_data_clean <- benthic_data %>% 
+  janitor::clean_names() %>% # clean names to lower snake case
+  select(year, site, quadrat, transect, taxonomy_substrate_functional_group, percent_cover) %>% # select only relevant columns
+  rename(substrate_group = taxonomy_substrate_functional_group) %>% # rename to shorter name for ease of use
+  filter(percent_cover != 0) %>% # remove all 0 values from percent cover
+  filter(substrate_group %in% c("Coral", "Crustose Corallines", "Sand", "Soft Coral", "Algae")) # only select the obvious substrate group
+  
+
+# load in fonts ----
+font_add_google(name = "Libre Baskerville", family = "baskerville")
+font_add_google(name = "Nunito", family = "nunito")
+font_add_google(name = "Source Sans 3", family = "Source")
+showtext_auto()
+```
+
+## Plot 1: general audience
+
+```{r}
+## create dataframes for plots ----
+# LTER1:
+LTER1_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 1",
+         year %in% c(2005, 2023)) %>% # select observations from LTER1 from the years 2005 and 2023
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # get averages
+  mutate(avg_cover = (avg_cover*.01)) %>% # convert to scale from 0-1
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each substrate group its own column
+  mutate(soft_coral = 0) %>% # it took soft coral out so add it back
+  rename("Soft Coral" = soft_coral,
+         "Algae" = "Algal Turf",
+         "CCA" = "Crustose Corallines")  # rename for consistency
+
+# LTER2:
+LTER2_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 2",
+         year %in% c(2005, 2023)) %>% # select observations from LTER2 from the years 2005 and 2023
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # get averages
+  mutate(avg_cover = (avg_cover*.01)) %>%
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each substrate group its own column
+  mutate(soft_coral = 0) %>% # it took soft coral out so add it back
+  rename("Soft Coral" = soft_coral,
+         "Algae" = "Algal Turf",
+         "CCA" = "Crustose Corallines") # rename for consistency
+
+# LTER3: 
+LTER3_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 3",
+         year %in% c(2005, 2023)) %>% # select observations from LTER2 from the years 2005 and 2023
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # get averages
+  mutate(avg_cover = (avg_cover*.01)) %>%
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each substrate group its own column
+  mutate(soft_coral = 0) %>% # it took soft coral out so add it back
+  rename("Soft Coral" = soft_coral,
+         "Algae" = "Algal Turf",
+         "CCA" = "Crustose Corallines")# rename for consistency
+
+# LTER4: 
+LTER4_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 4",
+         year %in% c(2005, 2023)) %>% # select observations from LTER2 from the years 2005 and 2023
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # get averages
+  mutate(avg_cover = (avg_cover*.01)) %>%
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) # make each substrate group its own column
+
+# LTER5:
+LTER5_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 5",
+         year %in% c(2005, 2023)) %>% # select observations from LTER2 from the years 2005 and 2023
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # get averages
+  mutate(avg_cover = (avg_cover*.01)) %>%
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) # make each substrate group its own column
+
+# LTER6: 
+LTER6_radar <- benthic_data_clean %>% 
+  filter(site == "LTER 6",
+         year %in% c(2005, 2023)) %>% # select observations from LTER2 from the years 2005 and 2023
+  group_by(substrate_group, year) %>% 
+  summarise(avg_cover = mean(percent_cover)) %>% # get averages
+  mutate(avg_cover = (avg_cover*.01)) %>%
+  pivot_wider(names_from = substrate_group, values_from = avg_cover) %>% # make each substrate group its own column
+  mutate(soft_coral = 0) %>% # it took soft coral out so add it back
+  rename("Soft Coral" = soft_coral,
+         "Algae" = "Algal Turf",
+         "CCA" = "Crustose Corallines") # rename for consistency
+
+LTER6_radar[is.na(LTER6_radar)] <- 0 # one value will not plot bc it is NA, change to 0
+```
+
+```{r}
+# make LTER plots for final plot ----
+# LTER1 PLOT
+LTER1_plot <- ggradar(LTER1_radar,
+                      axis.label.size = 5,
+                      grid.label.size = 6,
+                      grid.line.width = 0.2,
+                      group.line.width = 0.5,
+                      group.point.size = 1,
+                      base.size = 20,
+                      group.colours = c("cornflowerblue", "#ba3c3c"),
+                      background.circle.colour = "grey",
+                      background.circle.transparency = 0.06,
+                      gridline.min.colour	= "darkgrey",
+                      gridline.mid.colour	= "darkgrey",
+                      gridline.max.colour = "darkgrey") +
+  theme_void() +
+  labs(title = "Site 1") + # rename title
+  theme(plot.title = element_text(family = "baskerville", hjust = 0.5, size = 30, color = "#555755", face = "bold"),
+        legend.position = "none",
+        plot.margin = margin(0.25,0.25,0.25,0.25,"cm"))  +# adjust title text
+  annotate('rect', xmin = 1.15, xmax = 1.65, ymin = 0.25, ymax = 0.55, alpha = 0, col = 'coral', lwd = 1) 
+
+# LTER2 PLOT
+LTER2_plot <- ggradar(LTER2_radar,
+                      axis.label.size = 5,
+                      grid.label.size = 6,
+                      grid.line.width = 0.2,
+                      group.line.width = 0.5,
+                      group.point.size = 1, 
+                      group.colours = c("cornflowerblue", "#ba3c3c"),
+                      background.circle.colour = "grey",
+                      background.circle.transparency = 0.06,
+                      gridline.min.colour	= "darkgrey",
+                      gridline.mid.colour	= "darkgrey",
+                      gridline.max.colour = "darkgrey") +
+  theme_void() +
+  labs(title = "Site 2") + # rename title
+  theme(plot.title = element_text(family = "baskerville", hjust = 0.5, size = 30, color = "#555755", face = "bold"),
+        legend.position = "none",
+        plot.margin = margin(0.25,0.25,0.25,0.25,"cm"))  +# adjust title text
+  annotate('rect', xmin = 1.15, xmax = 1.65, ymin = 0.25, ymax = 0.55, alpha = 0, col = 'coral', lwd = 1) 
+
+# LTER3 PLOT
+LTER3_plot <- ggradar(LTER3_radar,
+                      axis.label.size = 5,
+                      grid.label.size = 6,
+                      grid.line.width = 0.2,
+                      group.line.width = 0.5,
+                      group.point.size = 1, 
+                      group.colours = c("cornflowerblue", "#ba3c3c"),
+                      background.circle.colour = "grey",
+                      background.circle.transparency = 0.06,
+                      gridline.min.colour	= "darkgrey",
+                      gridline.mid.colour	= "darkgrey",
+                      gridline.max.colour = "darkgrey") +
+  theme_void() +
+  labs(title = "Site 3") + # rename title
+  theme(plot.title = element_text(family = "baskerville", hjust = 0.5, size = 30, color = "#555755", face = "bold"),
+        legend.position = "none",
+        plot.margin = margin(0.25,0.25,0.25,0.25,"cm"))  +# adjust title text
+  annotate('rect', xmin = 1.15, xmax = 1.65, ymin = 0.25, ymax = 0.55, alpha = 0, col = 'coral', lwd = 1) 
+
+# LTER4 PLOT
+LTER4_plot <- ggradar(LTER4_radar,
+                      axis.label.size = 5,
+                      grid.label.size = 6,
+                      grid.line.width = 0.2,
+                      group.line.width = 0.5,
+                      group.point.size = 1, 
+                      group.colours = c("cornflowerblue", "#ba3c3c"),
+                      background.circle.colour = "grey",
+                      background.circle.transparency = 0.06,
+                      gridline.min.colour	= "darkgrey",
+                      gridline.mid.colour	= "darkgrey",
+                      gridline.max.colour = "darkgrey") +
+  theme_void() +
+  labs(title = "Site 4") + # rename title
+  theme(plot.title = element_text(family = "baskerville", hjust = 0.5, size = 30, color = "#555755", face = "bold"),
+        legend.position = "none",
+        plot.margin = margin(0.25,0.25,0.25,0.25,"cm"))  +# adjust title text
+  annotate('rect', xmin = 1.15, xmax = 1.65, ymin = 0.25, ymax = 0.55, alpha = 0, col = 'coral', lwd = 1) 
+
+# LTER5 PLOT
+LTER5_plot <- ggradar(LTER5_radar,
+                      axis.label.size = 5,
+                      grid.label.size = 6,
+                      grid.line.width = 0.2,
+                      group.line.width = 0.5,
+                      group.point.size = 1, 
+                      group.colours = c("cornflowerblue", "#ba3c3c"),
+                      background.circle.colour = "grey",
+                      background.circle.transparency = 0.06,
+                      gridline.min.colour	= "darkgrey",
+                      gridline.mid.colour	= "darkgrey",
+                      gridline.max.colour = "darkgrey") +
+  theme_void() +
+  labs(title = "Site 5") + # rename title
+  theme(plot.title = element_text(family = "baskerville", hjust = 0.5, size = 30, color = "#555755", face = "bold"),
+        legend.position = "bottom",
+        legend.key.height = unit(1, 'cm'), #change legend key height
+        legend.key.width = unit(0.5, 'cm'),
+        plot.margin = margin(0.25,0.25,0.25,0.25,"cm"),
+        legend.text = element_text(family = "Source", size = 30))  +# adjust title text
+  annotate('rect', xmin = 1.15, xmax = 1.65, ymin = 0.25, ymax = 0.55, alpha = 0, col = 'coral', lwd = 1) 
+
+# LTER6 PLOT
+LTER6_plot <- ggradar(LTER6_radar,
+                      axis.label.size = 5,
+                      grid.label.size = 6,
+                      grid.line.width = 0.2,
+                      group.line.width = 0.5,
+                      group.point.size = 1, 
+                      group.colours = c("cornflowerblue", "#ba3c3c"),
+                      background.circle.colour = "grey",
+                      background.circle.transparency = 0.06,
+                      gridline.min.colour	= "darkgrey",
+                      gridline.mid.colour	= "darkgrey",
+                      gridline.max.colour = "darkgrey") +
+  theme_void() + 
+  labs(title = "Site 6") + # rename title
+  theme(text = element_text(family = "Source"), 
+        plot.title = element_text(family = "baskerville", hjust = 0.5, size = 30, color = "#555755", face = "bold"),
+        legend.position = "none",
+        plot.margin = margin(0.5,0.25,0.25,0.25,"cm"))  + # adjust title text
+  annotate('rect', xmin = 1.15, xmax = 1.65, ymin = 0.25, ymax = 0.55, alpha = 0, col = 'coral', lwd = 1) 
+```
+
+
+```{r}
+# add plots together ----
+plot1 <- (LTER1_plot + LTER2_plot + LTER3_plot + LTER4_plot + LTER5_plot + LTER6_plot) +
+  
+  plot_layout(ncol = 3) +
+  
+  plot_annotation(title = "Coral Reefs are at risk!!",
+                  subtitle = "The ground cover of coral reefs can be indicative of the health of these beautiful places. As coral decreases,\nour fish friends can lose their homes and the health and diversity of reefs are at stake. When the red\nline is lower than the blue line, this means there has been a decrease in this ground cover type!",
+                  caption = "Read more here: https://www.int-res.com/articles/theme/m413p201.pdf!",
+                  theme = theme(plot.title = element_text(family = "baskerville",
+                                                          face = "bold",
+                                                          hjust = 0.5,
+                                                          size = 75),
+                                plot.subtitle = element_text(family = "Source", 
+                                                             size = 35, 
+                                                             hjust = 0.5,
+                                                             lineheight = 0.3),
+                                plot.margin = margin(0.2, 1, 0.2, 1),
+                                plot.caption = element_text(family = "Source",
+                                                            size = 30,
+                                                            hjust = 0.5)
+                                )) +
+  
+  annotate('curve', x = 1.66, y = 1.3, yend = 0.5, xend = 0.5, linewidth = 1, curvature = 0.3, arrow = arrow(length = unit(0.5, 'cm'))) 
+
+
+
+plot1
+```
+
+```{r}
+# save plot ----
+#........open plotting device to draw plot to a PNG file.........
+# specify file path/name and png resolution & size
+ragg::agg_png(here::here("outputs", paste0("plot1", ".png")), 
+              res = 320, width = 7, height = 5, units = "in")
+
+#................plot object that you want to draw...............
+plot1
+
+#....................turn off plotting device....................
+# once off, you should see your .png file appear in outputs/ folder
+dev.off()
+```
+![](outputs/plot1.png){fig-alt=""}
+
+## Plot 2: publication
+
+```{r}
+# summarise cover data by substrate group and year
+benthic_data_time <- benthic_data_clean %>%
+  group_by(year, substrate_group, site) %>%
+  summarise(avg_cover = mean(percent_cover)) %>% 
+  filter(substrate_group %in% c("Algae", "Coral"))
+
+# color palette
+coral_colors <- c("#54780a", "coral")
+
+# plot all substrate groups over time
+plot2 <- ggplot(benthic_data_time) +
+  geom_line(aes(x = year, y = avg_cover, color = substrate_group,  group = substrate_group, linetype = substrate_group)) +
+  theme_classic() +
+  labs(title = "Benthic cover over time on Moorea coral reefs",
+       color = "Substrate Group",
+       y = "Average Percent Cover",
+       x = "Year",
+       color  = "Substrate Group", 
+       linetype = "Substrate Group",
+       caption = "Figure 1: Each line represents average percent cover over each LTER site quadrat, and how average\nsubstrate covers changed over time. Each site had fluctuations over the years, but there was a general\ndecrease in coral cover and increase in algae cover from 2005 to 2023.") +
+  xlim(2005,2023) +
+  scale_color_manual(values = coral_colors) +
+  theme(text = element_text(size = 35),
+        axis.text.x = element_text(vjust = 0.5, hjust=1),
+        plot.title = element_text(family = "baskerville", size = 50, face = "bold"),
+        legend.title = element_text(family = "Source", face = "bold"),
+        legend.text = element_text(family = "Source"),
+        axis.text = element_text(family = "Source"),
+        axis.title = element_text(family = "Source", face = "bold"),
+        plot.caption = element_text(hjust = 0, lineheight = 0.5),
+        axis.title.y = element_text(angle = 90, margin = margin(r = 15)),
+        axis.title.x = element_text(margin = margin(t = 15, b = 15)),
+        strip.background = element_blank(),
+        panel.spacing = unit(2, "lines")) +
+  scale_x_continuous(expand = c(0, 0)) +
+  facet_wrap(~site, axes = "all") 
+
+```
+
+```{r}
+# save plot ----
+#........open plotting device to draw plot to a PNG file.........
+# specify file path/name and png resolution & size
+ragg::agg_png(here::here("outputs", paste0("plot2", ".png")), 
+              res = 320, width = 7, height = 5, units = "in")
+
+#................plot object that you want to draw...............
+plot2
+
+#....................turn off plotting device....................
+# once off, you should see your .png file appear in outputs/ folder
+dev.off()
+```
+
+![](outputs/plot2.png){fig-alt=""}
+
+## Plot 3: Presentation
+
+```{r}
+# summarise cover data by substrate group and year
+benthic_data_presentation <- benthic_data_clean %>% 
+  group_by(year, substrate_group) %>%
+  summarise(avg_cover = mean(percent_cover)) %>% 
+  filter(substrate_group %in% c("Algae", "Coral")) # select only these substrate groups
+
+# plot time series of substrate cover
+plot3 <- ggplot(benthic_data_presentation) +
+  geom_line(aes(x = year, y = avg_cover, color = substrate_group,  group = substrate_group, linetype = substrate_group), lwd = 2) +
+  theme_classic() +
+  labs(title = "Benthic cover over time on Moorea coral reefs",
+       color = "Substrate Group",
+       y = "Average Percent Cover",
+       x = "Year",
+       color  = "Substrate Group", 
+       linetype = "Substrate Group") +
+  scale_color_manual(values = coral_colors) +
+  scale_x_continuous(expand = c(0, 0)) +
+  theme(text = element_text(size = 40),
+        plot.title = element_text(family = "baskerville", size = 65, face = "bold", hjust = 0.5, margin = margin(b = 20)),
+        legend.title = element_text(family = "Source", face = "bold"),
+        legend.text = element_text(family = "Source"),
+        axis.text = element_text(family = "Source"),
+        axis.title = element_text(family = "Source", face = "bold"),
+        legend.position = "bottom",
+        axis.title.x = element_text(margin = margin(t = 15)),
+        axis.title.y = element_text(margin = margin(r = 15)),
+        legend.key.height = unit(2, 'cm'), #change legend key height
+        legend.key.width = unit(2, 'cm')) +
+  xlim(2005, 2035) +
+  annotate('curve', x = 2030, y = 34, yend = 35, xend = 2023.5, linewidth = 1, curvature = 0.5, arrow = arrow(length = unit(0.5, 'cm'))) +
+  annotate('curve', x = 2030, y = 24, yend = 21, xend = 2023.5, linewidth = 1, curvature = -0.3, arrow = arrow(length = unit(0.5, 'cm'))) +
+  annotate('text', x = 2027, y = 32, label = 'Algae benthic cover ultimately\nincreased', fontface = 'bold', size = 13, hjust = 0, lineheight = 0.5) +
+  annotate('text', x = 2027, y = 26, label = 'while coral benthic cover has\nshown an overall decrease', fontface = 'bold', size = 13, hjust = 0, lineheight = 0.5) 
+  
+
+plot3
+```
+
+```{r}
+# save plot ----
+#........open plotting device to draw plot to a PNG file.........
+# specify file path/name and png resolution & size
+ragg::agg_png(here::here("outputs", paste0("plot3", ".png")), 
+              res = 320, width = 9, height = 5, units = "in")
+
+#................plot object that you want to draw...............
+plot3
+
+#....................turn off plotting device....................
+# once off, you should see your .png file appear in outputs/ folder
+dev.off() 
+```
+
+![](outputs/plot3.png){fig-alt=""}
